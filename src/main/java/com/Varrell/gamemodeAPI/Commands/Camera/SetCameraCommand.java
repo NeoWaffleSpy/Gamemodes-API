@@ -22,7 +22,7 @@ public class SetCameraCommand extends AbstractPlayerCommand {
     @Nonnull
     private final RequiredArg<String> nameArg;
     public SetCameraCommand() {
-        super("set", "server.commands.worlds.desc");
+        super("set", "Set your camera with a camera setting");
         this.nameArg = this.withRequiredArg("cameraName", "The camera name already set in the system", ArgTypes.STRING);
     }
 

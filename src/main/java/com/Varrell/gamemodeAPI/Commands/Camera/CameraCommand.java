@@ -11,5 +11,6 @@ public class CameraCommand extends AbstractCommandCollection {
         this.addSubCommand(new GetCameraCommand());
         this.addSubCommand(new SetCameraCommand());
         this.addSubCommand(new ResetCameraCommand());
+        this.addSubCommand(new ListCameraCommand());
     }
 }

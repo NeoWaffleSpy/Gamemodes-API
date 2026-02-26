@@ -3,6 +3,7 @@ package com.Varrell.gamemodeAPI.Camera;
 import com.Varrell.gamemodeAPI.Camera.MouseControl.DefaultMouseControl;
 import com.Varrell.gamemodeAPI.Camera.MouseControl.AbstractMouseControl;
 import com.Varrell.gamemodeAPI.Component.Data.PlayerPOVComponent;
+import com.Varrell.gamemodeAPI.GamemodeAPI;
 import com.hypixel.hytale.event.EventRegistry;
 import com.hypixel.hytale.protocol.ClientCameraView;
 import com.hypixel.hytale.protocol.ServerCameraSettings;
@@ -12,9 +13,9 @@ import com.hypixel.hytale.server.core.event.events.player.PlayerInteractEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerMouseButtonEvent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
-import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import javax.annotation.Nonnull;
+import java.util.Collections;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.Objects;
@@ -53,6 +54,20 @@ public class CameraInitializer {
         new CameraInitializer("isometric2", new DefaultMouseControl(), false, "isometric");
     }
 
+    public static void editCameraSettings(PlayerRef playerRef, ServerCameraSettings newSettings) {
+        PlayerPOVComponent pPOV = getPOV(playerRef);
+        if (pPOV != null) {
+            pPOV.setCamSettings(newSettings);
+            playerRef.getPacketHandler().writeNoCache(new SetServerCamera(ClientCameraView.Custom, true, newSettings));
+        }
+    }
+
+    public static void editMouseControl(PlayerRef playerRef, AbstractMouseControl newControl) {
+        PlayerPOVComponent pPOV = getPOV(playerRef);
+        if (pPOV != null)
+            pPOV.setMouseControl(newControl);
+    }
+
     public static CameraInitializer get(String key) {
         return camDict.get(key);
     }
@@ -61,20 +76,32 @@ public class CameraInitializer {
         if (!this.isActive) {
             this.eventRegistry.enable();
             this.isActive = true;
-            //this.eventRegistry.register(PlayerConnectEvent.class, (event) -> this.onAddNewPlayer(event.getPlayerRef()));
-            this.eventRegistry.register(PlayerMouseButtonEvent.class, mouseControl::onPlayerMouseButton);
+            //this.eventRegistry.register(PlayerConnectEvent.class, (event) -> this.setPOV(event.getPlayerRef()));
+            this.eventRegistry.register(PlayerMouseButtonEvent.class, this::dispatchControl);
             this.eventRegistry.registerGlobal(PlayerInteractEvent.class, (event) -> event.setCancelled(true));
-            //Universe.get().getPlayers().forEach(this::onAddNewPlayer);
+            Universe.get().getPlayers().forEach((pRef) -> {
+                PlayerPOVComponent pPOV = getPOV(pRef);
+                if (pPOV != null) {
+                    String componentName = getPOV(pRef).getPOVName();
+                    if (componentName.equals(cameraName))
+                        this.setPOV(pRef);
+                }
+            });
         }
     }
 
-    public void setPOV(PlayerRef playerRef) {
+    public void setPOV(@Nonnull PlayerRef playerRef) {
         if (!isActive)
             return;
         if (isPlayerHidden)
             playerRef.getHiddenPlayersManager().hidePlayer(playerRef.getUuid());
         else
             playerRef.getHiddenPlayersManager().showPlayer(playerRef.getUuid());
+        PlayerPOVComponent pPOV = getPOV(playerRef);
+        if (pPOV == null)
+            return;
+        pPOV.setMouseControl(mouseControl);
+        pPOV.setCamSettings(cameraSettings);
         playerRef.getPacketHandler().writeNoCache(new SetServerCamera(ClientCameraView.Custom, true, this.cameraSettings));
     }
 
@@ -82,7 +109,7 @@ public class CameraInitializer {
         if (this.isActive) {
             this.eventRegistry.shutdown();
             Universe.get().getPlayers().forEach((PlayerRef playerRef) -> {
-                PlayerPOVComponent pPOV = playerRef.getHolder().getComponent(PlayerPOVComponent.getComponentType());
+                PlayerPOVComponent pPOV = getPOV(playerRef);
                 if (pPOV != null && Objects.equals(pPOV.getPOVName(), cameraName)) {
                     CameraInitializer.resetCamera(playerRef);
                 }
@@ -96,7 +123,28 @@ public class CameraInitializer {
         playerRef.getPacketHandler().writeNoCache(new SetServerCamera(ClientCameraView.Custom, false, null));
     }
 
-    private void onAddNewPlayer(@Nonnull PlayerRef playerRef) {
-        playerRef.getPacketHandler().writeNoCache(new SetServerCamera(ClientCameraView.Custom, true, this.cameraSettings));
+    public void dispatchControl(PlayerMouseButtonEvent event) {
+        event.getPlayerRef().getStore().getComponent(event.getPlayerRef(), PlayerPOVComponent.getComponentType()).getMouseControl().onPlayerMouseButton(event);
+    }
+
+    private static PlayerPOVComponent getPOV(PlayerRef playerRef) {
+        PlayerPOVComponent pPOV = null;
+        try {
+            pPOV = playerRef.getReference().getStore().getComponent(playerRef.getReference(), PlayerPOVComponent.getComponentType());
+        } catch (NullPointerException npe) {
+            try {
+                pPOV = playerRef.getHolder().getComponent(PlayerPOVComponent.getComponentType());
+            } catch (NullPointerException npe2) {
+                GamemodeAPI.LOGGER.atSevere().log("PlayerPOVComponent.getComponentType() is null for " + playerRef.getUsername());
+                return null;
+            }
+        }
+        return pPOV;
+    }
+
+    public static String getCameraList() {
+        if (camDict.isEmpty())
+            return null;
+        return String.join(", ", Collections.list(camDict.keys()));
     }
 }
