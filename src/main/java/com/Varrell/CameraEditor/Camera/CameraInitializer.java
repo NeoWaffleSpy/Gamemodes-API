@@ -29,20 +29,17 @@ public class CameraInitializer {
     private final AbstractMouseControl mouseControl;
     public String cameraName;
     public boolean isActive;
-    public boolean isPlayerHidden;
 
     public CameraInitializer(String cameraName) {
         this.cameraSettings = templateDict.get(cameraName);
         this.mouseControl = null;
-        this.isPlayerHidden = false;
         camDict.put(cameraName, this);
         activate();
     }
 
-    public CameraInitializer(String cameraName, AbstractMouseControl mouseControl, boolean isPlayerHidden, String templateName) {
+    public CameraInitializer(String cameraName, AbstractMouseControl mouseControl, String templateName) {
         this.cameraSettings = templateDict.get(templateName);
         this.mouseControl = mouseControl;
-        this.isPlayerHidden = isPlayerHidden;
         this.cameraName = cameraName;
         camDict.put(cameraName, this);
         activate();
@@ -54,7 +51,7 @@ public class CameraInitializer {
         set("Custom", cameraSettings);
         new CameraInitializer("Custom");
         getCodecSetting();
-        new CameraInitializer("TopDown", new DefaultMouseControl(), false, "TopDown");
+        new CameraInitializer("TopDown", new DefaultMouseControl(), "TopDown");
     }
 
     public static void editCameraSettings(PlayerRef playerRef, ServerCameraSettings newSettings) {
@@ -80,7 +77,7 @@ public class CameraInitializer {
         if (cam != null)
             cam.deactivate();
     }
-    public static ServerCameraSettings getTemplate (String key) {
+    public static ServerCameraSettings getTemplate(String key) {
         return templateDict.get(key);
     }
 
@@ -150,10 +147,6 @@ public class CameraInitializer {
     public void setPOV(@Nonnull PlayerRef playerRef) {
         if (!isActive)
             return;
-        if (isPlayerHidden)
-            playerRef.getHiddenPlayersManager().hidePlayer(playerRef.getUuid());
-        else
-            playerRef.getHiddenPlayersManager().showPlayer(playerRef.getUuid());
         PlayerPOVComponent pPOV = getPOV(playerRef);
         if (pPOV == null)
             return;
