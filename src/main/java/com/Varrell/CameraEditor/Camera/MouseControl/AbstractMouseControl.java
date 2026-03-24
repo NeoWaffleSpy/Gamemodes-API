@@ -1,4 +1,4 @@
-package com.Varrell.gamemodeAPI.Camera.MouseControl;
+package com.Varrell.CameraEditor.Camera.MouseControl;
 
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.protocol.MouseButtonType;

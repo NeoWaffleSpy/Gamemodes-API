@@ -1,9 +1,12 @@
-package com.Varrell.gamemodeAPI.Component.System;
+package com.Varrell.CameraEditor.Component.System;
 
-import com.Varrell.gamemodeAPI.Camera.CameraInitializer;
-import com.Varrell.gamemodeAPI.Component.Data.PlayerPOVComponent;
-import com.Varrell.gamemodeAPI.GamemodeAPI;
-import com.hypixel.hytale.component.*;
+import com.Varrell.CameraEditor.Camera.CameraInitializer;
+import com.Varrell.CameraEditor.CameraPlugin;
+import com.Varrell.CameraEditor.Component.Data.PlayerPOVComponent;
+import com.hypixel.hytale.component.CommandBuffer;
+import com.hypixel.hytale.component.ComponentType;
+import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.RefChangeSystem;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
@@ -19,7 +22,7 @@ public class PlayerPOVSystem extends RefChangeSystem<EntityStore, PlayerPOVCompo
 
     @Override
     public @NonNull ComponentType<EntityStore, PlayerPOVComponent> componentType() {
-        return GamemodeAPI.get().getPlayerPOVComponentType();
+        return CameraPlugin.get().getPlayerPOVComponentType();
     }
 
     @Override

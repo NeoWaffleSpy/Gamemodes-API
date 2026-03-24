@@ -1,7 +1,6 @@
-package com.Varrell.gamemodeAPI.Commands.Camera;
+package com.Varrell.CameraEditor.Commands.Camera;
 
-import com.Varrell.gamemodeAPI.Camera.CameraInitializer;
-import com.Varrell.gamemodeAPI.Component.Data.PlayerPOVComponent;
+import com.Varrell.CameraEditor.Camera.CameraInitializer;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.server.core.Message;
@@ -16,17 +15,27 @@ import org.jspecify.annotations.NonNull;
 
 import javax.annotation.Nonnull;
 
-public class ResetCameraCommand extends AbstractPlayerCommand {
-    public ResetCameraCommand() {
-        super("reset", "Reset your own camera");
+public class SetCameraCommand extends AbstractPlayerCommand {
+    @Nonnull
+    private final RequiredArg<String> nameArg;
+    public SetCameraCommand() {
+        super("set", "Set your camera with a camera setting");
+        this.nameArg = this.withRequiredArg("cameraName", "The camera name already set in the system", ArgTypes.STRING);
     }
 
     @Override
     protected void execute(@NonNull CommandContext commandContext, @NonNull Store<EntityStore> store, @NonNull Ref<EntityStore> ref, @NonNull PlayerRef playerRef, @NonNull World world) {
-        PlayerPOVComponent pPOV = store.getComponent(ref, PlayerPOVComponent.getComponentType());
-        if (pPOV != null)
-            CameraInitializer.deletePOV(playerRef);
-        else
-            commandContext.sendMessage(Message.raw("You do not have any custom POV applied"));
+        String name = (String)commandContext.get(this.nameArg);
+
+        CameraInitializer cam = CameraInitializer.get(name);
+        if (cam == null) {
+            commandContext.sendMessage(Message.raw(name + " is not a valid POV"));
+            return;
+        }
+        if (!cam.isActive) {
+            commandContext.sendMessage(Message.raw("The " + name + " POV is disabled"));
+            return;
+        }
+        CameraInitializer.setPlayerPov(name, playerRef);
     }
 }
